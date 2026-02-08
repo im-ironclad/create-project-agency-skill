@@ -5,7 +5,7 @@ Bootstrap an `AGENTS.md` and documentation index for any project. Detects your t
 ## Installation
 
 ```bash
-npx skills add im-ironclad/create-project-agency
+npx skills add im-ironclad/create-project-agency-skill
 ```
 
 ## What It Does
