@@ -1,10 +1,10 @@
 ---
 name: create-project-agency
 description: >
-  Bootstrap a CLAUDE.md and documentation index for any project. Detects
+  Bootstrap an AGENTS.md and documentation index for any project. Detects
   project signals from the filesystem, asks targeted questions, and generates
-  structured project documentation. Use when setting up Claude Code for a new
-  project or updating an existing CLAUDE.md.
+  structured project documentation. Use when setting up a new project or
+  updating an existing AGENTS.md.
 disable-model-invocation: true
 license: MIT
 metadata:
@@ -13,27 +13,39 @@ metadata:
   organization: Ironclad Apps
   abstract: >
     Project documentation bootstrapper that auto-detects tech stack, framework,
-    testing tools, and project structure, then generates a CLAUDE.md and
+    testing tools, and project structure, then generates an AGENTS.md and
     supporting docs (architecture, testing, vision, contributing, PLAN.md)
     through guided questions.
 ---
 
 # Create Project Agency
 
-Generate a `CLAUDE.md` and supporting documentation for the current project. Detects framework, tooling, and structure automatically, then asks targeted questions to fill gaps.
+Generate an `AGENTS.md` and supporting documentation for the current project. Detects framework, tooling, and structure automatically, then asks targeted questions to fill gaps.
 
 **Arguments**: `$ARGUMENTS`
 - `--update` — Skip the existing-file prompt and go straight to update mode
 
 ---
 
-## Phase 0: Existing File Check
+## Phase 0: Setup & Existing File Check
 
-Check if `CLAUDE.md` already exists in the project root.
+### Step 1: CLAUDE.md Symlink Question
+
+Ask the user:
+
+> "This skill generates `AGENTS.md` as the primary documentation file. Would you also like a `CLAUDE.md` symlink pointing to it?"
+> 1. Yes (recommended for Claude Code users)
+> 2. No — just AGENTS.md
+
+Store the choice as `{create_symlink}` (true/false).
+
+### Step 2: Check for Existing Files
+
+Check if `AGENTS.md` already exists in the project root.
 
 **If it exists AND `--update` was NOT passed:**
 - Show the user a summary of the existing file
-- Ask: "CLAUDE.md already exists. Would you like to: (1) Update it with new detections, (2) Regenerate from scratch, (3) Cancel?"
+- Ask: "AGENTS.md already exists. Would you like to: (1) Update it with new detections, (2) Regenerate from scratch, (3) Cancel?"
 - If "Update" → proceed to Phase 1 in **update mode** (see Update Mode section below)
 - If "Regenerate" → proceed to Phase 1 normally (will overwrite)
 - If "Cancel" → stop
@@ -43,6 +55,8 @@ Check if `CLAUDE.md` already exists in the project root.
 
 **If it does not exist:**
 - Proceed to Phase 1 normally
+
+Also check for an existing `CLAUDE.md` that is NOT a symlink — if found, note it for Phase 4 (warn before replacing with a symlink).
 
 ---
 
@@ -164,7 +178,7 @@ Keep questions minimal. If detection was thorough, questions 1 and 3 may be suff
 
 ---
 
-## Phase 3: Generate CLAUDE.md
+## Phase 3: Generate AGENTS.md
 
 Write the file using the template structure from `references/claude-md-template.md`. Read that file now for the exact format.
 
@@ -182,26 +196,29 @@ Write the file using the template structure from `references/claude-md-template.
 - **Be concrete, not generic.** "Use `yarn` for all package management" is good. "Follow best practices" is not.
 - **Omit sections with nothing to say.** If there's no monorepo, don't include a structure section showing a flat project.
 - **Use the user's words** from their answers in Phase 2 for constraints and conventions.
-- **Keep it under 80 lines.** CLAUDE.md should be scannable. Link to docs for details.
+- **Keep it under 80 lines.** AGENTS.md should be scannable. Link to docs for details.
 - **No placeholder content.** Every line should be real information about this project.
 
 ---
 
 ## Phase 4: Verify & Iterate
 
-Show the generated CLAUDE.md content to the user. Ask:
+Show the generated AGENTS.md content to the user. Ask:
 
-"Here's the generated CLAUDE.md. Would you like any adjustments before I write it?"
+"Here's the generated AGENTS.md. Would you like any adjustments before I write it?"
 
 If the user requests changes, make them. When approved:
-1. Write the file
-2. Remind: "Don't forget to commit `CLAUDE.md` to your repository."
+1. Write `AGENTS.md`
+2. If `{create_symlink}` is true:
+   - If `CLAUDE.md` exists as a real file (not a symlink), warn the user: "CLAUDE.md exists as a standalone file. Creating the symlink will replace it. Proceed?"
+   - Create symlink: `ln -s AGENTS.md CLAUDE.md` (relative path)
+3. Remind: "Don't forget to commit `AGENTS.md`" (and "`CLAUDE.md`" if the symlink was created) "to your repository."
 
 ---
 
 ## Phase 5: Guided Documentation Creation
 
-After CLAUDE.md is finalized, offer to create supporting documentation.
+After AGENTS.md is finalized, offer to create supporting documentation.
 
 ### Presenting the Menu
 
@@ -268,7 +285,7 @@ For each doc the user selects:
 
 **3. Show output and ask for adjustments.**
 
-**4. Write the file** and update the Doc Index in CLAUDE.md:
+**4. Write the file** and update the Doc Index in AGENTS.md:
 - Add a new entry in the pipe-delimited format
 - Entry format: `|{key}:{{file path} - {compressed single-line summary}}`
 
@@ -280,7 +297,8 @@ Show a summary of everything that was created:
 
 ```
 ## Created files:
-- CLAUDE.md
+- AGENTS.md
+- CLAUDE.md → AGENTS.md (symlink, if opted in)
 - docs/architecture.md
 - docs/testing.md
 (etc.)
@@ -292,17 +310,17 @@ Remember to commit these files to your repository.
 
 ## Update Mode
 
-When running in update mode (existing CLAUDE.md + `--update` flag or user chose "Update"):
+When running in update mode (existing AGENTS.md + `--update` flag or user chose "Update"):
 
 1. **Run Phase 1 detection** as normal
-2. **Read current CLAUDE.md** content
+2. **Read current AGENTS.md** content
 3. **Diff detection against current content** — identify:
-   - New technologies/tools detected but not in CLAUDE.md
+   - New technologies/tools detected but not in AGENTS.md
    - Directory structure changes
    - New documentation files not in the Doc Index
 4. **Present proposed changes** to the user:
    ```
-   ## Proposed Updates to CLAUDE.md
+   ## Proposed Updates to AGENTS.md
 
    **Add to Tech Stack:**
    - Vitest (detected in devDependencies)
@@ -319,16 +337,19 @@ When running in update mode (existing CLAUDE.md + `--update` flag or user chose 
    ```
 5. **Ask for approval** — user can accept all, pick specific changes, or cancel
 6. **Apply approved changes** — edit the file, don't regenerate from scratch
-7. **Never remove content without asking** — if something in CLAUDE.md wasn't detected, ask before removing: "I didn't detect {X} anymore. Should I remove it from CLAUDE.md?"
+7. **Never remove content without asking** — if something in AGENTS.md wasn't detected, ask before removing: "I didn't detect {X} anymore. Should I remove it from AGENTS.md?"
+8. **Symlink check** — if `{create_symlink}` is true, verify the `CLAUDE.md` symlink still exists and points to `AGENTS.md`; recreate if broken
+9. **Migration** — if only `CLAUDE.md` exists (no `AGENTS.md`), offer to migrate: rename `CLAUDE.md` to `AGENTS.md` and create a symlink back
 
 ---
 
 ## Important Guidelines
 
 - **Use Glob and Read tools** for all file detection — never guess what exists
-- **Read `references/claude-md-template.md`** before generating any CLAUDE.md content — it contains the canonical format and examples
+- **Read `references/claude-md-template.md`** before generating any AGENTS.md content — it contains the canonical format and examples
 - **Don't fabricate information** — if you can't detect something and the user didn't mention it, leave it out
-- **Keep CLAUDE.md under 80 lines** — it's a quick reference, not exhaustive documentation
+- **Keep AGENTS.md under 80 lines** — it's a quick reference, not exhaustive documentation
 - **The Doc Index uses pipe-delimited format** — match the exact format shown in the template
 - **Always create the `docs/` directory** before writing files into it
-- **Update CLAUDE.md's Doc Index** every time a new doc is created
+- **Update AGENTS.md's Doc Index** every time a new doc is created
+- **When the user opts for a CLAUDE.md symlink**, create it using a relative path (`ln -s AGENTS.md CLAUDE.md`). Never write content to the symlink directly.
