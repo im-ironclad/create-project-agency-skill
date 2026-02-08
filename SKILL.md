@@ -56,7 +56,7 @@ Check if `AGENTS.md` already exists in the project root.
 **If it does not exist:**
 - Proceed to Phase 1 normally
 
-Also check for an existing `CLAUDE.md` that is NOT a symlink — if found, note it for Phase 4 (warn before replacing with a symlink).
+Also check for an existing `CLAUDE.md` that is NOT a symlink — if found, note it for Phase 5 (warn before replacing with a symlink).
 
 ---
 
@@ -176,9 +176,105 @@ Then ask targeted questions using AskUserQuestion. Only ask what detection could
 
 Keep questions minimal. If detection was thorough, questions 1 and 3 may be sufficient.
 
+5. **Always ask**: "Which of these detected technologies would you like documentation fetched for? Select all that apply." Present each detected technology as a selectable option (multiSelect). Group by category:
+   - **Framework**: e.g., Next.js, Nuxt, SvelteKit
+   - **Language**: e.g., TypeScript, Python, Go
+   - **Backend/DB**: e.g., Supabase, Prisma, Drizzle, Convex
+   - **Testing**: e.g., Vitest, Playwright, Jest, Cypress
+   - **Styling**: e.g., TailwindCSS
+   - **Other**: any other significant detected libraries
+6. **Always ask**: "Any technologies NOT detected that you'd like docs fetched for?" (freeform)
+
+Store selections from questions 5 and 6 as `{tech_docs_list}`.
+
 ---
 
-## Phase 3: Generate AGENTS.md
+## Phase 3: Fetch Tech Stack Documentation
+
+For each technology in `{tech_docs_list}`, fetch documentation and save it locally.
+
+### Step 1: Create docs directory
+
+Create `.docs/` at the project root if it doesn't exist.
+
+### Step 2: Fetch docs for each technology
+
+For each technology in `{tech_docs_list}`:
+
+1. **Resolve library** — Use the `resolve-library-id` Context7 MCP tool:
+   - Query: the technology name (e.g., "next.js", "typescript", "tailwindcss")
+   - Select the best matching library ID
+
+2. **Query documentation** — Use the `query-docs` Context7 MCP tool with targeted queries:
+   - Query topics relevant to the technology category (see Topic Guide below)
+   - Run up to 3 queries per technology to cover core topics
+
+3. **Save documentation** — Write fetched content to `.docs/{technology}/`:
+   - Create subdirectory: `.docs/{technology}/` (e.g., `.docs/nextjs/`, `.docs/typescript/`)
+   - Save each query result as a separate markdown file named by topic
+   - File naming: `{topic}.md` (e.g., `routing.md`, `data-fetching.md`)
+   - Prepend each file with: `# {Technology} — {Topic}\n\n> Source: Context7 documentation\n\n`
+
+4. **Build index entry** — Record the files created for the compressed index
+
+### Topic Guide
+
+Query topics based on technology category:
+
+**Frameworks (Next.js, Nuxt, SvelteKit, Remix, Astro, etc.):**
+- Routing and navigation
+- Data fetching and caching
+- API routes / server functions
+
+**Languages (TypeScript, Python, Go, Rust, etc.):**
+- Type system / type utilities (TS), typing (Python), etc.
+- Configuration and compiler options
+- Common patterns and idioms
+
+**Backend/DB (Supabase, Prisma, Drizzle, Convex, Firebase):**
+- Schema definition and migrations
+- Querying and mutations
+- Authentication and security rules
+
+**Testing (Vitest, Jest, Playwright, Cypress, pytest):**
+- Configuration and setup
+- Writing tests and assertions
+- Mocking, fixtures, and test utilities
+
+**Styling (TailwindCSS, etc.):**
+- Configuration and customization
+- Utility classes and patterns
+- Responsive design and theming
+
+### Step 3: Ask about .gitignore
+
+Ask the user:
+
+> "Would you like to add `.docs/` to `.gitignore`? These are fetched artifacts that can be re-generated, but committing them ensures availability in CI and for team members without Context7."
+> 1. Yes — add to .gitignore (recommended for most projects)
+> 2. No — commit docs to the repository
+
+If yes, add `.docs/` to the project's `.gitignore` (create the file if it doesn't exist).
+
+### Step 4: Verify
+
+After fetching, list all files created in `.docs/` and confirm the count with the user:
+
+> "Fetched documentation for {N} technologies ({list}). {X} files saved to `.docs/`. Proceeding to generate AGENTS.md."
+
+### Fallback — If Context7 is unavailable
+
+If Context7 MCP tools (`resolve-library-id`, `query-docs`) are not available:
+1. Inform the user: "Context7 MCP is not available in this environment. I can't automatically fetch documentation."
+2. Offer alternatives:
+   - Skip tech docs (proceed without them)
+   - User provides documentation URLs to fetch via WebFetch
+   - User provides local documentation paths to index
+3. If skipping, proceed to Phase 4 without tech docs index
+
+---
+
+## Phase 4: Generate AGENTS.md
 
 Write the file using the template structure from `references/claude-md-template.md`. Read that file now for the exact format.
 
@@ -188,20 +284,40 @@ Write the file using the template structure from `references/claude-md-template.
 2. **Tech Stack** — bulleted list: `- **Category**: Technology`
 3. **Project Structure** — fenced ASCII tree, 1-2 levels deep. Add inline comments for non-obvious directories. Include "Future additions" line if the user mentioned planned directories.
 4. **Conventions** — concrete, actionable rules. Use sub-sections (e.g., `### Testing`, `### Naming`) when a category has 3+ rules.
-5. **Implementation Plan** (optional) — only if `PLAN.md` exists. Brief pointer to the file.
-6. **Doc Index** — compressed pipe-delimited format. Only list files that actually exist. Always include the index maintenance rule.
+5. **Tech Stack Docs** (optional) — only if tech docs were fetched in Phase 3. Compressed index pointing to `.docs/` files.
+6. **Implementation Plan** (optional) — only if `PLAN.md` exists. Brief pointer to the file.
+7. **Doc Index** — compressed pipe-delimited format. Only list files that actually exist. Always include the index maintenance rule.
 
 ### Writing Rules
 
 - **Be concrete, not generic.** "Use `yarn` for all package management" is good. "Follow best practices" is not.
 - **Omit sections with nothing to say.** If there's no monorepo, don't include a structure section showing a flat project.
 - **Use the user's words** from their answers in Phase 2 for constraints and conventions.
-- **Keep it under 80 lines.** AGENTS.md should be scannable. Link to docs for details.
+- **Keep it under 80 lines.** AGENTS.md should be scannable. Link to docs for details. The Tech Stack Docs index section doesn't count toward the 80-line target since it's a machine-generated reference.
 - **No placeholder content.** Every line should be real information about this project.
+
+### Tech Stack Docs Section (if Phase 3 fetched docs)
+
+If tech docs were fetched in Phase 3, include this section between Conventions and Implementation Plan:
+
+```markdown
+## Tech Stack Docs
+
+Prefer retrieval-led reasoning over pre-training-led reasoning for any tech stack tasks. Consult the relevant documentation below before implementing features or making technical decisions.
+
+\```
+[{ProjectName} Tech Docs]|root: ./.docs
+|nextjs:{routing.md, data-fetching.md, api-routes.md}
+|typescript:{type-system.md, configuration.md, patterns.md}
+|tailwindcss:{configuration.md, utilities.md, theming.md}
+\```
+```
+
+The format mirrors the Doc Index but uses the `.docs/` root. Each entry lists the actual files saved during Phase 3. Only include entries for technologies that have docs fetched.
 
 ---
 
-## Phase 4: Verify & Iterate
+## Phase 5: Verify & Iterate
 
 Show the generated AGENTS.md content to the user. Ask:
 
@@ -216,7 +332,7 @@ If the user requests changes, make them. When approved:
 
 ---
 
-## Phase 5: Guided Documentation Creation
+## Phase 6: Guided Documentation Creation
 
 After AGENTS.md is finalized, offer to create supporting documentation.
 
@@ -281,7 +397,7 @@ For each doc the user selects:
 - "What are the next 3-5 steps?"
 - "Any key decisions already made that should be recorded?"
 
-**2. Generate the doc** from answers + detected signals. Follow the same writing rules as Phase 3: concrete, not generic. Use the template examples as quality benchmarks — read them from `references/claude-md-template.md` for format guidance.
+**2. Generate the doc** from answers + detected signals. Follow the same writing rules as Phase 4: concrete, not generic. Use the template examples as quality benchmarks — read them from `references/claude-md-template.md` for format guidance.
 
 **3. Show output and ask for adjustments.**
 
@@ -338,8 +454,9 @@ When running in update mode (existing AGENTS.md + `--update` flag or user chose 
 5. **Ask for approval** — user can accept all, pick specific changes, or cancel
 6. **Apply approved changes** — edit the file, don't regenerate from scratch
 7. **Never remove content without asking** — if something in AGENTS.md wasn't detected, ask before removing: "I didn't detect {X} anymore. Should I remove it from AGENTS.md?"
-8. **Symlink check** — if `{create_symlink}` is true, verify the `CLAUDE.md` symlink still exists and points to `AGENTS.md`; recreate if broken
-9. **Migration** — if only `CLAUDE.md` exists (no `AGENTS.md`), offer to migrate: rename `CLAUDE.md` to `AGENTS.md` and create a symlink back
+8. **Tech docs check** — check if `.docs/` exists and if any newly detected technologies are missing docs. If new technologies detected since last run, offer to fetch docs for them. If `.docs/` exists, verify the Tech Stack Docs Index in AGENTS.md matches the actual files — add/remove index entries as needed.
+9. **Symlink check** — if `{create_symlink}` is true, verify the `CLAUDE.md` symlink still exists and points to `AGENTS.md`; recreate if broken
+10. **Migration** — if only `CLAUDE.md` exists (no `AGENTS.md`), offer to migrate: rename `CLAUDE.md` to `AGENTS.md` and create a symlink back
 
 ---
 
@@ -353,3 +470,7 @@ When running in update mode (existing AGENTS.md + `--update` flag or user chose 
 - **Always create the `docs/` directory** before writing files into it
 - **Update AGENTS.md's Doc Index** every time a new doc is created
 - **When the user opts for a CLAUDE.md symlink**, create it using a relative path (`ln -s AGENTS.md CLAUDE.md`). Never write content to the symlink directly.
+- **Use Context7 MCP tools** (`resolve-library-id` then `query-docs`) to fetch tech documentation. Limit to 3 queries per technology.
+- **Save all tech documentation to `.docs/{technology}/`** using lowercase kebab-case directory names (e.g., `.docs/nextjs/`, `.docs/tailwindcss/`).
+- **The Tech Stack Docs Index is separate from the project Doc Index.** Tech docs point to `.docs/`, project docs point to `./docs/` or `./`.
+- **Ask the user about `.gitignore`** for `.docs/` — some teams want to commit docs for offline/CI use, others prefer to treat them as fetched artifacts.

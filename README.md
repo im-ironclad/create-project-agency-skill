@@ -14,14 +14,16 @@ When you run `/create-project-agency` in Claude Code, the skill:
 
 1. **Scans your project** — detects package manager, framework, monorepo setup, testing tools, styling, backend, and existing documentation
 2. **Presents findings** — shows what it detected and asks targeted questions to fill gaps
-3. **Generates AGENTS.md** — creates a structured, project-specific documentation file following a proven template, optionally with a `CLAUDE.md` symlink
-4. **Iterates with you** — shows the output for review before writing
-5. **Creates supporting docs** — optionally generates architecture, testing, vision, contributing, and implementation plan docs
+3. **Fetches tech stack docs** — pulls real documentation for your detected technologies via Context7 MCP and saves them locally to `.docs/`
+4. **Generates AGENTS.md** — creates a structured, project-specific documentation file with a tech docs index, following a proven template, optionally with a `CLAUDE.md` symlink
+5. **Iterates with you** — shows the output for review before writing
+6. **Creates supporting docs** — optionally generates architecture, testing, vision, contributing, and implementation plan docs
 
 ## What It Generates
 
-- **AGENTS.md** — project header, tech stack, structure, conventions, doc index (under 80 lines)
+- **AGENTS.md** — project header, tech stack, structure, conventions, tech docs index, doc index (under 80 lines)
 - **CLAUDE.md** — optional symlink to AGENTS.md (for Claude Code compatibility)
+- **`.docs/{technology}/`** — fetched documentation per technology (e.g., `.docs/nextjs/routing.md`)
 - **docs/architecture.md** — tech stack rationale, domain model, data flows, deployment
 - **docs/testing.md** — philosophy, conventions, file naming, test data strategy
 - **docs/vision.md** — problem statement, target audience, differentiators
@@ -49,6 +51,14 @@ When you run `/create-project-agency` in Claude Code, the skill:
 ```
 
 The skill creates `AGENTS.md` by default and asks if you'd also like a `CLAUDE.md` symlink pointing to it.
+
+## Tech Stack Documentation
+
+The skill uses **retrieval-led reasoning** — after detecting your tech stack, it fetches real documentation for each technology via [Context7 MCP](https://github.com/upstash/context7) and saves it locally to `.docs/{technology}/`. This means the agent consults actual, up-to-date docs rather than relying on training data that may be outdated.
+
+Each technology gets up to 3 targeted documentation files covering core topics (routing, data fetching, configuration, etc.). The generated AGENTS.md includes a compressed index pointing to these files, so the agent always knows where to look.
+
+If Context7 MCP is not available, the skill offers fallback options: skip tech docs, provide URLs for manual fetching, or point to local documentation.
 
 ## Update Mode
 

@@ -21,7 +21,7 @@ create-project-agency/
 
 ## Usage
 
-1. Read `SKILL.md` for the full workflow instructions (Phases 0–5)
+1. Read `SKILL.md` for the full workflow instructions (Phases 0–6)
 2. Browse `references/claude-md-template.md` for the canonical CLAUDE.md format
 3. Invoke via `/create-project-agency`
 4. Pass `--update` to update an existing AGENTS.md instead of regenerating
@@ -30,7 +30,8 @@ create-project-agency/
 
 1. **Phase 0** — Asks about CLAUDE.md symlink, then checks for existing AGENTS.md
 2. **Phase 1** — Silently scans the project for package managers, frameworks, monorepo tools, testing, styling, backend, and documentation
-3. **Phase 2** — Presents detected profile and asks targeted questions
-4. **Phase 3** — Generates AGENTS.md using the template from `references/`
-5. **Phase 4** — Shows output for review and iteration
-6. **Phase 5** — Offers to create supporting docs (architecture, testing, vision, contributing, PLAN.md)
+3. **Phase 2** — Presents detected profile, asks targeted questions, confirms tech stack for doc fetching
+4. **Phase 3** — Fetches documentation for selected technologies via Context7 MCP, saves to `.docs/`
+5. **Phase 4** — Generates AGENTS.md with tech docs index using the template from `references/`
+6. **Phase 5** — Shows output for review and iteration
+7. **Phase 6** — Offers to create supporting docs (architecture, testing, vision, contributing, PLAN.md)

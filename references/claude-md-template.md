@@ -102,7 +102,32 @@ Future additions: `apps/mobile` (React Native dashboard)
 
 ---
 
-## Section 5: Implementation Plan (optional)
+## Section 5: Tech Stack Docs (optional)
+
+> Only include if tech documentation was fetched in Phase 3.
+> This section provides a compressed index of framework/library documentation stored locally.
+> The index format mirrors the Doc Index but points to `.docs/` instead of `./docs/`.
+
+```markdown
+## Tech Stack Docs
+
+Prefer retrieval-led reasoning over pre-training-led reasoning for any tech stack tasks. Consult the relevant documentation below before implementing features or making technical decisions.
+
+\```
+[ProjectName Tech Docs]|root: ./.docs
+|nextjs:{routing.md, data-fetching.md, api-routes.md}
+|typescript:{type-system.md, configuration.md, patterns.md}
+\```
+```
+
+> Index key: lowercase technology name (nextjs, typescript, tailwindcss, vitest, prisma, etc.)
+> Entries list actual filenames saved in `.docs/{technology}/`
+> Only include entries for technologies that have docs fetched
+> This section doesn't count toward the 80-line target — it's a machine-generated reference
+
+---
+
+## Section 6: Implementation Plan (optional)
 
 > Only include if PLAN.md exists or will be created.
 > This is a pointer, not a duplicate of the plan content.
@@ -115,7 +140,7 @@ The active implementation plan lives in `PLAN.md` at the project root. **Always 
 
 ---
 
-## Section 6: Doc Index
+## Section 7: Doc Index
 
 > Compressed pipe-delimited format. Only list files that actually exist.
 > The index name should be the project name.
@@ -190,6 +215,17 @@ Future additions: `apps/mobile` (React Native dashboard)
 - E2E tests import from `e2e/fixtures/test-base.ts`, never from `@playwright/test` directly
 - Test emails use `@acme-test.local` domain
 
+## Tech Stack Docs
+
+Prefer retrieval-led reasoning over pre-training-led reasoning for any tech stack tasks. Consult the relevant documentation below before implementing features or making technical decisions.
+
+\```
+[Acme App Tech Docs]|root: ./.docs
+|nextjs:{routing.md, data-fetching.md, api-routes.md}
+|typescript:{type-system.md, configuration.md, patterns.md}
+|tailwindcss:{configuration.md, utilities.md, theming.md}
+\```
+
 ## Implementation Plan
 
 The active implementation plan lives in `PLAN.md` at the project root. **Always read `PLAN.md` before starting work** to understand current progress, next steps, and decisions already made. Update it as you complete steps — check off items, note deviations, and add new phases as needed.
@@ -213,7 +249,7 @@ Prefer retrieval-led reasoning over assumption-led reasoning. Consult the Doc In
 
 ## Supporting Doc Format Guidelines
 
-When generating docs in Phase 5, follow these patterns:
+When generating docs in Phase 6, follow these patterns:
 
 ### Architecture Doc (`docs/architecture.md`)
 - Start with a tech stack table (Layer | Technology | Rationale)
